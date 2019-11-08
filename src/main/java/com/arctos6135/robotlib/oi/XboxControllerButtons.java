@@ -7,6 +7,10 @@ package com.arctos6135.robotlib.oi;
  * @author Tyler Tian
  */
 public final class XboxControllerButtons {
+
+    private XboxControllerButtons() {
+    }
+
     /**
      * The x-axis (horizontal axis) of the left analog stick.
      */
