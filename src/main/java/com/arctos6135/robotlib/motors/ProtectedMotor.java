@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.PowerDistributionPanel;
  * period of time, the motor becomes blacklisted. When a motor is blacklisted,
  * it will be set to 0 and will not respond to any operations. Once blacklisted,
  * a motor stays blacklisted unless it is overridden with
- * {@link #overrideBlacklist()}.
+ * {@link #clearBlacklist()}.
  * </p>
  * 
  * @author Tyler Tian
@@ -36,7 +36,7 @@ public class ProtectedMotor {
      * 
      * @param pdp             The PDP to get current readings from
      * @param channel         The PDP channel to get current readings from
-     * @param motor           The internal {@link #Motor} object controlled
+     * @param motor           The internal {@link Motor} object controlled
      * @param currentLimit    The current limit in amps
      * @param overcurrentTime The time allowed to exceed the current limit before
      *                        the motor is blacklisted
@@ -47,7 +47,7 @@ public class ProtectedMotor {
     public ProtectedMotor(PowerDistributionPanel pdp, int channel, Motor motor, double currentLimit,
             double overcurrentTime, Runnable callback) {
         this.motor = motor;
-        
+
         new CurrentMonitoringTrigger(pdp, channel, currentLimit, overcurrentTime, () -> {
             if (enabled) {
                 blacklisted = true;
@@ -65,7 +65,7 @@ public class ProtectedMotor {
      * 
      * @param pdp             The PDP to get current readings from
      * @param channel         The PDP channel to get current readings from
-     * @param motor           The internal {@link #Motor} object controlled
+     * @param motor           The internal {@link Motor} object controlled
      * @param currentLimit    The current limit in amps
      * @param overcurrentTime The time allowed to exceed the current limit before
      *                        the motor is blacklisted
