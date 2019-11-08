@@ -1,0 +1,89 @@
+plugins {
+    // Apply the java-library plugin to add support for Java Library
+    id 'java-library'
+
+    // Use GradleRIO for the FRC libraries
+    id 'edu.wpi.first.GradleRIO' version '2019.3.2'
+
+    // Checkstyle
+    id 'checkstyle'
+}
+
+// Set source and target compatibility to version 11
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+project.version = "0.1.0"
+
+// Needed to fix Javadoc search
+// See comments below
+final JAVADOC_FIX_SEARCH_STR = '\n\n' +
+'/****************************************************************\n' + 
+' * THE BELOW SNIPPET WAS APPENDED BY THE BUILD PROCESS          *\n' +
+' * This fixes the broken search functionality due to not having *\n' +
+' * modules without breaking external links                      *\n' +
+' ****************************************************************/\n' +
+'getURLPrefix = function(ui) {\n' +
+'    return \'\';\n' +
+'};\n'
+
+tasks.withType(Javadoc) {
+    // Link to external docs for all the builtin classes
+    options.with {
+        links 'https://docs.oracle.com/en/java/javase/11/docs/api/', 
+              'https://first.wpi.edu/FRC/roborio/release/docs/java/'
+    }
+    // Only generate docs for public methods, fields and types
+    options.addBooleanOption('public', true)
+
+    doLast {
+        // Since the introduction of modules in Java 9, the Javadoc search functionality would break if the
+        // project was not using modules. Although --no-module-directories fixes this, it breaks external
+        // links in the process. Therefore, we append a short snippet of code to the end of the JavaScript
+        // to fix it.
+        def searchScript = new File(destinationDir.getAbsolutePath() + '/search.js')
+        searchScript.append JAVADOC_FIX_SEARCH_STR
+    }
+}
+
+// Checkstyle config
+checkstyle {
+    project.ext.checkstyleVersion = '8.20'
+
+    ignoreFailures = false
+    configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
+}
+
+// Include all Java source files in checkstyleMain
+checkstyleMain {
+    source = sourceSets.main.allSource
+}
+
+// Disable XML reports and enable HTML reports for checkstyle
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled false
+        html.enabled true
+    }
+}
+
+repositories {
+    // Use jcenter for resolving dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    jcenter()
+}
+
+dependencies {
+    // Use WPILib API
+    api wpi.deps.wpilib()
+
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.12'
+}
+
+// Add sources to the jar and exclude API classes
+jar {
+    from sourceSets.main.allSource
+    
+    archiveName "${rootProject.name}-${version}.jar"
+}
