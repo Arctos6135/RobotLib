@@ -5,24 +5,25 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
-	<!-- Configuration -->
-	<!-- Tabs are 4 spaces wide -->
-	<property name="tabWidth" value="4"/>
-	<module name="SuppressionFilter">
-		<property name="file" value="${config_loc}/suppressions.xml"/>
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/suppressions.xml"/>
 	</module>
-
+    
 	<!-- Best practices checks -->
 	<!-- Newline at the end of file -->
 	<module name="NewlineAtEndOfFile"/>
-
+    
 	<!-- Javadoc checks -->
 	<!-- Every package has a package-info.java -->
 	<module name="JavadocPackage">
-		<property name="severity" value="warning"/>
+        <property name="severity" value="warning"/>
 	</module>
-
+    
 	<module name="TreeWalker">
+        <!-- Configuration -->
+        <!-- Tabs are 4 spaces wide -->
+        <property name="tabWidth" value="4"/>
+        
 		<!-- Best practices checks -->
 		<!-- Avoid star imports (warning) -->
 		<module name="AvoidStarImport">
