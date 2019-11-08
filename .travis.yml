@@ -3,9 +3,9 @@ language: java
 dist: xenial
 
 # Encrypted Ryver webhook URL
-# env:
-#   global:
-#     secure: "1a9MLjd8TL8vhGMl7nKI5lqDNhveFvLBxTdq6UgXlNyaGyk49ki4MRd+tuZCwFuhQ9CMD36cTuSDcaP3uJ5uHu1JYcDAjMVj+8oyJ1KjilE1V7AIQlfBEBXX56Jo86xtPAyJlkbDQnnAUBf0n3ejBpHPm72p8qs9Ptq56m4IDwRRlkz8lXDG6BOCzONH/KG4gMz7mUf7yyViISZ+lKl3BT0zre3ShYrETOBEpwIh5y3FcJuZOn/fCsZhuWQ6XoMmjfjLwzGGNykmxy3lcnfgZm2ZWr5yx+ol0M8hJga9UT5U/y34eubf/dSH63eBkv7ZStTETOZR48wyvmNRwKUfI8dxWVjDDK4fd3NjqBt8ojA24SiXOBPRDrzyENLUi8WqGpyn4gIfwJPgDrok2WNgSaIqXnjtt8wWf+LQu/fFXc/asIJmzXZTEcY71raofk7Viu9gLSCDUiCoa/o1/5advl4H59bEupPDKGkYsERc3MUNeQxG+z1TKWNrmjLGvefXEeYzcjwl4yaDMlf22vG8J1SzVxoIaTqfJVlG55lwpgYrCSisx09w2PZYhApt8VmUIxPXn5S9B7TzqM5aaZ0hhyTXBbZ7wtPRqk+o05s+XfoWmT6yTX897sCqwX2mA/UAMUt1rfWJv92eAj7LYAh3YGvw5pg7DXX2CwaQRU/6bMc="
+env:
+  global:
+    secure: "nocwDdsM6mLY8besfGRshGQn44ZxaRgsuu00Q0D5T9JUrr3T0zxnh26PJwSxJmn02BqyYgmYUlNieb0h4cev4YOvuLaJxkTTP6TrUwHFFh6OQZp5rUVRR8Fbajje24sSKKJxbjR3nNqCb1cvpeZ4uks+rEc90LML9qO/L5XC9foYEHw5tTwp/zKThzhDJLkTs3KRpA4dIwYfXCpLpPzEbWpPNjouuBqBDHwJqPsqb4ps64hsybckEK3J7JR8FbWPWPOW4IFM0rpF6yjWZZwLbpYArX2FwjmZaR1Fdge4ECXHdS3bmiZS15G4LpKjOuKUYeV7E9dTVmQmkaGb2xr2aSnVVtHz5eDneDxP5pFYdA5X9uw25023BCONZ9YLDBK0H2TQOVBYHvMc33cnjAITgWHnnWh/vLlZ9Gb79qRkuOZiITT5Y0qs8XtctWnPhELWKvk7XHkCFeaunwWx9mnYwb6JpdlRxpsvWEVAgmiCwlgdTstK9h5fFf2fKu/1lh77EO/N7BYZMlTdb4nd9uWscfbcEr1G8TzOZCaA9ScbW4rKkMysltB3NPiKcCS+HuOX8qBxQ6SacbiEp+Wie05Cp2sDhUCWOyBx3Q9B45w6QuKbtb+H0kAZjacrsM5ycKYhnsWRTL5Ga76AGEaH6odSnA6Wx064pzJ+2/3aUPBIN9s="
 
 install: 
   # chmod the wrapper to be executable
@@ -25,17 +25,17 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
-# after_success:
-#   - export SHORT_COMMIT=${TRAVIS_COMMIT:0:7}
-#   - >
-#     curl --request 'POST' 
-#     --header 'Content-Type: text/plain; charset=utf-8' 
-#     --data "&#9989; **SUCCESS** &#9989; The latest commit pushed to **RobotLib** (commit *$SHORT_COMMIT* on branch *$TRAVIS_BRANCH*) has [**passed** CI checks]($TRAVIS_JOB_WEB_URL)!"
-#     $WEBHOOK_URL
-# after_failure:
-#   - export SHORT_COMMIT=${TRAVIS_COMMIT:0:7}
-#   - >
-#     curl --request 'POST' 
-#     --header 'Content-Type: text/plain; charset=utf-8' 
-#     --data "&#10060; **ERROR** &#10060; The latest commit pushed to **RobotLib** (commit *$SHORT_COMMIT* on branch *$TRAVIS_BRANCH*) has [**failed** CI checks]($TRAVIS_JOB_WEB_URL)!" 
-#     $WEBHOOK_URL
+after_success:
+  - export SHORT_COMMIT=${TRAVIS_COMMIT:0:7}
+  - >
+    curl --request 'POST' 
+    --header 'Content-Type: text/plain; charset=utf-8' 
+    --data "&#9989; **SUCCESS** &#9989; The latest commit pushed to **RobotLib** (commit *$SHORT_COMMIT* on branch *$TRAVIS_BRANCH*) has [**passed** CI checks]($TRAVIS_JOB_WEB_URL)!"
+    $WEBHOOK_URL
+after_failure:
+  - export SHORT_COMMIT=${TRAVIS_COMMIT:0:7}
+  - >
+    curl --request 'POST' 
+    --header 'Content-Type: text/plain; charset=utf-8' 
+    --data "&#10060; **ERROR** &#10060; The latest commit pushed to **RobotLib** (commit *$SHORT_COMMIT* on branch *$TRAVIS_BRANCH*) has [**failed** CI checks]($TRAVIS_JOB_WEB_URL)!" 
+    $WEBHOOK_URL
