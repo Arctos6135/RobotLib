@@ -3,10 +3,8 @@ package com.arctos6135.robotlib.logging;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -53,7 +51,6 @@ public final class RobotLogger {
     private static Formatter formatter;
     private static Logger logger;
 
-    private static DateFormat dateFormat;
     private static File logDir;
 
     private static boolean isInitialized = false;
@@ -198,8 +195,6 @@ public final class RobotLogger {
         logger = Logger.getLogger(robotClass.getName());
         logger.setUseParentHandlers(false);
 
-        RobotLogger.dateFormat = dateFormat;
-
         // Get a date string (for the log file)
         Date date = new Date();
 
@@ -225,6 +220,12 @@ public final class RobotLogger {
 
     /**
      * Sets the logging level.
+     * 
+     * <p>
+     * Note that this only affects the logs that are written to file; the errors and
+     * warnings reported to the Driver Station and log handler calls are not
+     * affected.
+     * </p>
      * 
      * @param level The logging level
      */
@@ -389,7 +390,7 @@ public final class RobotLogger {
      * <p>
      * Note that unlike {@link #cleanLogs(File, DateFormat, long)}, this method will
      * have no effect if the logger is not initialized, since it depends on the log
-     * directory and date format to be set.
+     * directory to be set.
      * </p>
      * 
      * @param maxAgeHours The max age, in hours, of a log before it gets deleted
@@ -398,7 +399,7 @@ public final class RobotLogger {
         if (!isInitialized) {
             return;
         }
-        cleanLogs(logDir, dateFormat, maxAgeHours);
+        cleanLogs(logDir, maxAgeHours);
     }
 
     /**
@@ -409,12 +410,11 @@ public final class RobotLogger {
      * is not initialized.
      * </p>
      * 
-     * @param logDir        The log directory
-     * @param logDateFormat The date format the log file names were formatted with
-     * @param maxAgeHours   The max age, in hours, of a log file before it gets
-     *                      deleted
+     * @param logDir      The log directory
+     * @param maxAgeHours The max age, in hours, of a log file before it gets
+     *                    deleted
      */
-    public static void cleanLogs(File logDir, DateFormat logDateFormat, long maxAgeHours) {
+    public static void cleanLogs(File logDir, long maxAgeHours) {
         if (!logDir.isDirectory()) {
             if (logDir.exists()) {
                 throw new IllegalArgumentException("logDir must be a directory");
@@ -427,23 +427,12 @@ public final class RobotLogger {
         Date now = new Date();
         // Go through all files in the dir
         for (File f : logDir.listFiles()) {
-            // Check only files
-            if (f.isFile()) {
-                try {
-                    // Try to parse the date
-                    // Parse it from the filename instead of getting the last modified time
-                    // This way we don't delete anything that's not a log file
-                    Date d = logDateFormat.parse(f.getName());
-                    // Convert the difference between the two times into hours and delete the file
-                    // if needed
-                    long diffHours = TimeUnit.HOURS.convert(now.getTime() - d.getTime(), TimeUnit.MILLISECONDS);
-                    if (diffHours > maxAgeHours) {
-                        f.delete();
-                    }
-                }
-                // If the name cannot be parsed skip it
-                catch (ParseException e) {
-                    continue;
+            // Check only files that end in .log
+            if (f.isFile() && f.getName().endsWith(".log")) {
+                // Calculate time after last modified
+                long diffHours = (now.getTime() - f.lastModified()) / 3600000;
+                if (diffHours > maxAgeHours) {
+                    f.delete();
                 }
             }
         }
