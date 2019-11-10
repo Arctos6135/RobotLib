@@ -32,6 +32,15 @@ import edu.wpi.first.wpilibj.DriverStation;
  * disabled.
  * </p>
  * <p>
+ * Note: Since the roboRIO has no external battery to power the RTC, its system
+ * time will be reset every time power is lost. The system time is only
+ * correctly updated after the Driver Station is connected. Therefore, you
+ * should wait until {@link DriverStation#isDSAttached()} returns true before
+ * calling {@link #init(Class)} or any of its overloads, since they depend on
+ * the system time to be correct in order to create a log file with the correct
+ * name.
+ * </p>
+ * <p>
  * Because log files can contain a lot of data and accumulates over time, it is
  * recommended that the {@link #cleanLogs(File, DateFormat, long)} method or one
  * of its overloads be used to automatically delete old log files.
@@ -92,13 +101,24 @@ public final class RobotLogger {
      * Attempting to log without first initializing the logger will have no effect.
      * </p>
      * <p>
-     * The log files are stored in "/home/lvuser/frc-robot-logs". The dates are
-     * formatted with the string "yyyy_MM_dd-HH_mm_ss".
+     * The log files are stored in "/home/lvuser/frc-robot-logs". If this directory
+     * does not exist, it will be created. The dates are formatted with the string
+     * "yyyy_MM_dd-HH_mm_ss".
+     * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
      * </p>
      * 
      * @param robotClass The robot's class
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If the log directory exists, but is not a
+     *                                  directory
      */
     public static void init(Class<?> robotClass) throws IOException {
         init(robotClass, new File("/home/lvuser/frc-robot-logs"));
@@ -108,17 +128,31 @@ public final class RobotLogger {
      * Initializes the robot logger.
      * 
      * <p>
+     * If {@code logDir} or any of its parent directories do not exist, they will be
+     * created.
+     * </p>
+     * <p>
      * If the logger is already initialized, this method will have no effect.
      * Attempting to log without first initializing the logger will have no effect.
      * </p>
      * <p>
      * The dates are formatted with the string "yyyy_MM_dd-HH_mm_ss".
      * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
+     * </p>
      * 
      * @param robotClass The robot's class
      * @param logDir     The directory to store the logs in
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If {@code logDir} exists, but is not a
+     *                                  directory
      */
     public static void init(Class<?> robotClass, File logDir) throws IOException {
         init(robotClass, logDir, new SimpleDateFormat("yyyy_MM_dd-HH_mm_ss"));
@@ -128,21 +162,35 @@ public final class RobotLogger {
      * Initializes the robot logger.
      * 
      * <p>
+     * If {@code logDir} or any of its parent directories do not exist, they will be
+     * created.
+     * </p>
+     * <p>
      * If the logger is already initialized, this method will have no effect.
      * Attempting to log without first initializing the logger will have no effect.
+     * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
      * </p>
      * 
      * @param robotClass The robot's class
      * @param logDir     The directory to store the logs in
      * @param dateFormat A date formatter (for the log file name)
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If {@code logDir} exists, but is not a
+     *                                  directory
      */
     public static void init(Class<?> robotClass, File logDir, DateFormat dateFormat) throws IOException {
         if (isInitialized) {
             return;
         }
-        if (!logDir.isDirectory()) {
+        if (logDir.exists() && !logDir.isDirectory()) {
             throw new IllegalArgumentException("logDir must be a directory!");
         }
 
@@ -156,7 +204,15 @@ public final class RobotLogger {
         Date date = new Date();
 
         // Create the log directory if it does not exist
-        logDir.mkdirs();
+        if (!logDir.exists()) {
+            try {
+                if (!logDir.mkdirs()) {
+                    throw new IOException("Failed to create log directory!");
+                }
+            } catch (SecurityException e) {
+                throw new IOException("Failed to create log directory!", e);
+            }
+        }
 
         // Create handler and formatter
         fileHandler = new FileHandler(logDir.getAbsolutePath() + File.separator + dateFormat.format(date) + ".log");
