@@ -3,10 +3,8 @@ package com.arctos6135.robotlib.logging;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -32,26 +30,42 @@ import edu.wpi.first.wpilibj.DriverStation;
  * disabled.
  * </p>
  * <p>
+ * Note: Since the roboRIO has no external battery to power the RTC, its system
+ * time will be reset every time power is lost. The system time is only
+ * correctly updated after the Driver Station is connected. Therefore, you
+ * should wait until {@link DriverStation#isDSAttached()} returns true before
+ * calling {@link #init(Class)} or any of its overloads, since they depend on
+ * the system time to be correct in order to create a log file with the correct
+ * name.
+ * </p>
+ * <p>
  * Because log files can contain a lot of data and accumulates over time, it is
- * recommended that the {@link #cleanLogs(File, DateFormat, long)} method or one
- * of its overloads be used to automatically delete old log files.
+ * recommended that the {@link #cleanLogs(File, long)} method or one of its
+ * overloads be used to automatically delete old log files.
  * </p>
  * 
  * @author Tyler Tian
  */
-public final class RobotLogger {
-    private static Handler fileHandler;
-    private static Formatter formatter;
-    private static Logger logger;
+public class RobotLogger {
+    private Handler fileHandler;
+    private Formatter formatter;
+    private Logger logger;
 
-    private static DateFormat dateFormat;
-    private static File logDir;
+    private File logDir;
 
-    private static boolean isInitialized = false;
+    private boolean isInitialized = false;
 
-    private static BiConsumer<Level, String> logHandler;
+    private BiConsumer<Level, String> logHandler;
 
-    static {
+    /**
+     * Constructs a new logger instance.
+     * 
+     * <p>
+     * Note that this does not initialize it. Call {@link #init(Class)} or one of
+     * its overloads to initialize the logger.
+     * </p>
+     */
+    public RobotLogger() {
         // Add a shutdown hook on the VM to always write logs before exiting
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -59,9 +73,6 @@ public final class RobotLogger {
                 flush();
             }
         });
-    }
-
-    private RobotLogger() {
     }
 
     /**
@@ -92,15 +103,26 @@ public final class RobotLogger {
      * Attempting to log without first initializing the logger will have no effect.
      * </p>
      * <p>
-     * The log files are stored in "/home/lvuser/frc-robot-logs". The dates are
-     * formatted with the string "yyyy_MM_dd-HH_mm_ss".
+     * The log files are stored in "/home/lvuser/frc-robot-logs". If this directory
+     * does not exist, it will be created. The dates are formatted with the string
+     * "yyyy_MM_dd-HH_mm_ss".
+     * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
      * </p>
      * 
      * @param robotClass The robot's class
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If the log directory exists, but is not a
+     *                                  directory
      */
-    public static void init(Class<?> robotClass) throws IOException {
+    public void init(Class<?> robotClass) throws IOException {
         init(robotClass, new File("/home/lvuser/frc-robot-logs"));
     }
 
@@ -108,19 +130,33 @@ public final class RobotLogger {
      * Initializes the robot logger.
      * 
      * <p>
+     * If {@code logDir} or any of its parent directories do not exist, they will be
+     * created.
+     * </p>
+     * <p>
      * If the logger is already initialized, this method will have no effect.
      * Attempting to log without first initializing the logger will have no effect.
      * </p>
      * <p>
      * The dates are formatted with the string "yyyy_MM_dd-HH_mm_ss".
      * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
+     * </p>
      * 
      * @param robotClass The robot's class
      * @param logDir     The directory to store the logs in
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If {@code logDir} exists, but is not a
+     *                                  directory
      */
-    public static void init(Class<?> robotClass, File logDir) throws IOException {
+    public void init(Class<?> robotClass, File logDir) throws IOException {
         init(robotClass, logDir, new SimpleDateFormat("yyyy_MM_dd-HH_mm_ss"));
     }
 
@@ -128,21 +164,35 @@ public final class RobotLogger {
      * Initializes the robot logger.
      * 
      * <p>
+     * If {@code logDir} or any of its parent directories do not exist, they will be
+     * created.
+     * </p>
+     * <p>
      * If the logger is already initialized, this method will have no effect.
      * Attempting to log without first initializing the logger will have no effect.
+     * </p>
+     * <p>
+     * Note: Since the roboRIO has no external battery to power the RTC, its system
+     * time will be reset every time power is lost. The system time is only
+     * correctly updated after the Driver Station is connected. Therefore, you
+     * should wait until {@link DriverStation#isDSAttached()} returns true before
+     * calling this method or any of its overloads, since they depend on the system
+     * time to be correct in order to create a log file with the correct name.
      * </p>
      * 
      * @param robotClass The robot's class
      * @param logDir     The directory to store the logs in
      * @param dateFormat A date formatter (for the log file name)
-     * @throws IOException              If an error occurs with the log file
-     * @throws IllegalArgumentException If {@code logDir} is not a directory
+     * @throws IOException              If an error occurs with creating the log
+     *                                  file or directories
+     * @throws IllegalArgumentException If {@code logDir} exists, but is not a
+     *                                  directory
      */
-    public static void init(Class<?> robotClass, File logDir, DateFormat dateFormat) throws IOException {
+    public void init(Class<?> robotClass, File logDir, DateFormat dateFormat) throws IOException {
         if (isInitialized) {
             return;
         }
-        if (!logDir.isDirectory()) {
+        if (logDir.exists() && !logDir.isDirectory()) {
             throw new IllegalArgumentException("logDir must be a directory!");
         }
 
@@ -150,13 +200,19 @@ public final class RobotLogger {
         logger = Logger.getLogger(robotClass.getName());
         logger.setUseParentHandlers(false);
 
-        RobotLogger.dateFormat = dateFormat;
-
         // Get a date string (for the log file)
         Date date = new Date();
 
         // Create the log directory if it does not exist
-        logDir.mkdirs();
+        if (!logDir.exists()) {
+            try {
+                if (!logDir.mkdirs()) {
+                    throw new IOException("Failed to create log directory!");
+                }
+            } catch (SecurityException e) {
+                throw new IOException("Failed to create log directory!", e);
+            }
+        }
 
         // Create handler and formatter
         fileHandler = new FileHandler(logDir.getAbsolutePath() + File.separator + dateFormat.format(date) + ".log");
@@ -170,9 +226,15 @@ public final class RobotLogger {
     /**
      * Sets the logging level.
      * 
+     * <p>
+     * Note that this only affects the logs that are written to file; the errors and
+     * warnings reported to the Driver Station and log handler calls are not
+     * affected.
+     * </p>
+     * 
      * @param level The logging level
      */
-    public static void setLevel(Level level) {
+    public void setLevel(Level level) {
         logger.setLevel(level);
     }
 
@@ -182,7 +244,7 @@ public final class RobotLogger {
      * @param handler A {@code BiConsumer<T, U>} accepting a log level and log
      *                message string.
      */
-    public static void setLogHandler(BiConsumer<Level, String> handler) {
+    public void setLogHandler(BiConsumer<Level, String> handler) {
         logHandler = handler;
     }
 
@@ -197,7 +259,7 @@ public final class RobotLogger {
      * 
      * @param error The error message
      */
-    public static void logError(String error) {
+    public void logError(String error) {
         if (isInitialized) {
             DriverStation.reportError(error, false);
             logger.severe(error);
@@ -219,7 +281,7 @@ public final class RobotLogger {
      * 
      * @param warning The warning message
      */
-    public static void logWarning(String warning) {
+    public void logWarning(String warning) {
         if (isInitialized) {
             DriverStation.reportWarning(warning, false);
             logger.warning(warning);
@@ -240,7 +302,7 @@ public final class RobotLogger {
      * 
      * @param info The info message
      */
-    public static void logInfo(String info) {
+    public void logInfo(String info) {
         if (isInitialized) {
             logger.info(info);
 
@@ -260,7 +322,7 @@ public final class RobotLogger {
      * 
      * @param infoFine The info message
      */
-    public static void logInfoFine(String infoFine) {
+    public void logInfoFine(String infoFine) {
         if (isInitialized) {
             logger.fine(infoFine);
 
@@ -280,7 +342,7 @@ public final class RobotLogger {
      * 
      * @param infoFiner The info message
      */
-    public static void logInfoFiner(String infoFiner) {
+    public void logInfoFiner(String infoFiner) {
         if (isInitialized) {
             logger.finer(infoFiner);
 
@@ -300,7 +362,7 @@ public final class RobotLogger {
      * 
      * @param infoFinest The info message
      */
-    public static void logInfoFinest(String infoFinest) {
+    public void logInfoFinest(String infoFinest) {
         if (isInitialized) {
             logger.finest(infoFinest);
 
@@ -321,7 +383,7 @@ public final class RobotLogger {
      * disabledInit()} method to flush the logs every time the robot is disabled.
      * </p>
      */
-    public static void flush() {
+    public void flush() {
         if (isInitialized) {
             fileHandler.flush();
         }
@@ -331,18 +393,18 @@ public final class RobotLogger {
      * Deletes all the logs that are more than a certain number of hours old.
      * 
      * <p>
-     * Note that unlike {@link #cleanLogs(File, DateFormat, long)}, this method will
-     * have no effect if the logger is not initialized, since it depends on the log
-     * directory and date format to be set.
+     * Note that unlike {@link #cleanLogs(File, long)}, this method will have no
+     * effect if the logger is not initialized, since it depends on the log
+     * directory to be set.
      * </p>
      * 
      * @param maxAgeHours The max age, in hours, of a log before it gets deleted
      */
-    public static void cleanLogs(long maxAgeHours) {
+    public void cleanLogs(long maxAgeHours) {
         if (!isInitialized) {
             return;
         }
-        cleanLogs(logDir, dateFormat, maxAgeHours);
+        cleanLogs(logDir, maxAgeHours);
     }
 
     /**
@@ -353,12 +415,11 @@ public final class RobotLogger {
      * is not initialized.
      * </p>
      * 
-     * @param logDir        The log directory
-     * @param logDateFormat The date format the log file names were formatted with
-     * @param maxAgeHours   The max age, in hours, of a log file before it gets
-     *                      deleted
+     * @param logDir      The log directory
+     * @param maxAgeHours The max age, in hours, of a log file before it gets
+     *                    deleted
      */
-    public static void cleanLogs(File logDir, DateFormat logDateFormat, long maxAgeHours) {
+    public void cleanLogs(File logDir, long maxAgeHours) {
         if (!logDir.isDirectory()) {
             if (logDir.exists()) {
                 throw new IllegalArgumentException("logDir must be a directory");
@@ -371,23 +432,12 @@ public final class RobotLogger {
         Date now = new Date();
         // Go through all files in the dir
         for (File f : logDir.listFiles()) {
-            // Check only files
-            if (f.isFile()) {
-                try {
-                    // Try to parse the date
-                    // Parse it from the filename instead of getting the last modified time
-                    // This way we don't delete anything that's not a log file
-                    Date d = logDateFormat.parse(f.getName());
-                    // Convert the difference between the two times into hours and delete the file
-                    // if needed
-                    long diffHours = TimeUnit.HOURS.convert(now.getTime() - d.getTime(), TimeUnit.MILLISECONDS);
-                    if (diffHours > maxAgeHours) {
-                        f.delete();
-                    }
-                }
-                // If the name cannot be parsed skip it
-                catch (ParseException e) {
-                    continue;
+            // Check only files that end in .log
+            if (f.isFile() && f.getName().endsWith(".log")) {
+                // Calculate time after last modified
+                long diffHours = (now.getTime() - f.lastModified()) / 3600000;
+                if (diffHours > maxAgeHours) {
+                    f.delete();
                 }
             }
         }
