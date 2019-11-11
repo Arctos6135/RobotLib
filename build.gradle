@@ -13,7 +13,7 @@ plugins {
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
-project.version = "0.1.0"
+project.version = "0.1.1"
 
 // Needed to fix Javadoc search
 // See comments below
