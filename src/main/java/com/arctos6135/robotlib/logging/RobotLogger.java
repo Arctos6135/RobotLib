@@ -2,6 +2,7 @@ package com.arctos6135.robotlib.logging;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,7 +41,7 @@ import edu.wpi.first.wpilibj.DriverStation;
  * </p>
  * <p>
  * Because log files can contain a lot of data and accumulates over time, it is
- * recommended that the {@link #cleanLogs(File, long)} method or one of its
+ * recommended that the {@link #cleanLogs(File, double)} method or one of its
  * overloads be used to automatically delete old log files.
  * </p>
  * 
@@ -52,6 +53,7 @@ public class RobotLogger {
     private Logger logger;
 
     private File logDir;
+    private File logFile;
 
     private boolean isInitialized = false;
 
@@ -200,6 +202,8 @@ public class RobotLogger {
         logger = Logger.getLogger(robotClass.getName());
         logger.setUseParentHandlers(false);
 
+        this.logDir = logDir;
+
         // Get a date string (for the log file)
         Date date = new Date();
 
@@ -215,8 +219,10 @@ public class RobotLogger {
         }
 
         // Create handler and formatter
-        fileHandler = new FileHandler(logDir.getAbsolutePath() + File.separator + dateFormat.format(date) + ".log");
-        formatter = new RobotLoggerFormatter();
+        String logFilePath = logDir.getAbsolutePath() + File.separator + dateFormat.format(date) + ".log";
+        this.fileHandler = new FileHandler(logFilePath);
+        this.logFile = new File(logFilePath);
+        this.formatter = new RobotLoggerFormatter();
         fileHandler.setFormatter(formatter);
         logger.addHandler(fileHandler);
 
@@ -393,14 +399,18 @@ public class RobotLogger {
      * Deletes all the logs that are more than a certain number of hours old.
      * 
      * <p>
-     * Note that unlike {@link #cleanLogs(File, long)}, this method will have no
+     * This method will only delete files that have an extension of .log, or
+     * .log.lck.
+     * </p>
+     * <p>
+     * Note that unlike {@link #cleanLogs(File, double)}, this method will have no
      * effect if the logger is not initialized, since it depends on the log
      * directory to be set.
      * </p>
      * 
      * @param maxAgeHours The max age, in hours, of a log before it gets deleted
      */
-    public void cleanLogs(long maxAgeHours) {
+    public void cleanLogs(double maxAgeHours) {
         if (!isInitialized) {
             return;
         }
@@ -411,7 +421,11 @@ public class RobotLogger {
      * Deletes all the logs that are more than a certain number of hours old.
      * 
      * <p>
-     * Unlike {@link #cleanLogs(long)}, this method still works even if the logger
+     * This method will only delete files that have an extension of .log, or
+     * .log.lck.
+     * </p>
+     * <p>
+     * Unlike {@link #cleanLogs(double)}, this method still works even if the logger
      * is not initialized.
      * </p>
      * 
@@ -419,7 +433,7 @@ public class RobotLogger {
      * @param maxAgeHours The max age, in hours, of a log file before it gets
      *                    deleted
      */
-    public void cleanLogs(File logDir, long maxAgeHours) {
+    public void cleanLogs(File logDir, double maxAgeHours) {
         if (!logDir.isDirectory()) {
             if (logDir.exists()) {
                 throw new IllegalArgumentException("logDir must be a directory");
@@ -433,12 +447,22 @@ public class RobotLogger {
         // Go through all files in the dir
         for (File f : logDir.listFiles()) {
             // Check only files that end in .log
-            if (f.isFile() && f.getName().endsWith(".log")) {
-                // Calculate time after last modified
-                long diffHours = (now.getTime() - f.lastModified()) / 3600000;
-                if (diffHours > maxAgeHours) {
-                    f.delete();
+            // Also make sure that it's not the file currently used
+            try {
+                if (f.isFile()
+                        && (f.getName().endsWith(".log") && !f.getCanonicalPath().equals(logFile.getCanonicalPath()))
+                        || (f.getName().endsWith(".log.lck")
+                                && !f.getCanonicalPath().equals(logFile.getCanonicalPath() + ".lck"))) {
+                    // Calculate time after last modified
+                    double diffHours = (now.getTime() - f.lastModified()) / 3600000.0;
+                    if (diffHours >= maxAgeHours) {
+                        f.delete();
+                    }
                 }
+            } catch (IOException e) {
+                // WTF
+                e.printStackTrace();
+                throw new UncheckedIOException("Something bad just happened that never should", e);
             }
         }
     }

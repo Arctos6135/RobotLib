@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Level;
@@ -143,6 +144,13 @@ public class RobotLoggerTest {
 
         logger.init(getClass(), f);
 
+        // Try logging without attaching handler
+        expectedLevel = null;
+        expectedMessage = null;
+        handlerCalled = false;
+        logger.logError("Bloor");
+        assertThat(handlerCalled, is(false));
+
         // Set the log handler
         logger.setLogHandler((level, message) -> {
             // Assert level and message are as expected
@@ -152,6 +160,7 @@ public class RobotLoggerTest {
             handlerCalled = true;
         });
 
+        // Try logging after attaching handler
         expectedLevel = Level.SEVERE;
         expectedMessage = "Arctos";
         handlerCalled = false;
@@ -187,5 +196,58 @@ public class RobotLoggerTest {
         handlerCalled = false;
         logger.logInfoFinest("FRC");
         assertThat(handlerCalled, is(true));
+    }
+
+    /**
+     * Tests {@link RobotLogger#cleanLogs(double)}.
+     * 
+     * @throws IOException if something goes wrong
+     * @throws NoSuchFieldException if something goes wrong
+     * @throws SecurityException if something goes wrong
+     * @throws IllegalAccessException if something goes wrong
+     */
+    @Test
+    public void testRobotLoggerCleanLogs()
+            throws IOException, NoSuchFieldException, SecurityException, IllegalAccessException {
+        // Create a temp dir for the logs
+        // Otherwise there will be an exception since /home is owned by root
+        Path tempDir = Files.createTempDirectory("robotlib-test-");
+        File f = tempDir.toFile();
+        TestUtils.deleteDirectoryOnExit(f);
+
+        // Create files
+        File f1 = new File(f.getCanonicalPath() + File.separator + "Arctos.log");
+        File f2 = new File(f1.getCanonicalPath() + ".lck");
+
+        RobotLogger logger = new RobotLogger();
+
+        // Initialize logger and create files
+        logger.init(getClass(), f);
+        logger.flush();
+        f1.createNewFile();
+        f2.createNewFile();
+
+        // Get the private logFile field
+        Field logFileField = logger.getClass().getDeclaredField("logFile");
+        logFileField.setAccessible(true);
+        File logFile = (File) logFileField.get(logger);
+        File logLckFile = new File(logFile.getCanonicalPath() + ".lck");
+
+        // Assert log file exists
+        // The lck file may or may not exist depending on the platform
+        assertThat(logFile.exists(), is(true));
+        boolean lckExists = logLckFile.exists();
+
+        // This should delete all files except the current log file
+        logger.cleanLogs(0);
+        // Assert that the files we just created were deleted
+        assertThat(f1.exists(), is(false));
+        assertThat(f2.exists(), is(false));
+        // Assert that log file still exists
+        assertThat(logFile.exists(), is(true));
+        // If the lck file existed, assert that it still exists
+        if(lckExists) {
+            assertThat(logLckFile.exists(), is(true));
+        }
     }
 }
