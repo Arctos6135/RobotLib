@@ -20,7 +20,7 @@ dependencies {
     compile wpi.deps.wpilib()
     compile wpi.deps.vendor.java()
 
-    compile files('lib/RobotLib-0.1.1.jar')
+    compile files('lib/RobotLib-0.1.2.jar')
     
     nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
     nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
