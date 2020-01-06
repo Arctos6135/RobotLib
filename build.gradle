@@ -3,7 +3,7 @@ plugins {
     id 'java-library'
 
     // Use GradleRIO for the FRC libraries
-    id 'edu.wpi.first.GradleRIO' version '2019.3.2'
+    id 'edu.wpi.first.GradleRIO' version '2020.1.2'
 
     // Checkstyle
     id 'checkstyle'
@@ -13,7 +13,7 @@ plugins {
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
-project.version = "0.1.2"
+project.version = "0.1.3"
 
 // Needed to fix Javadoc search
 // See comments below
@@ -75,7 +75,13 @@ repositories {
 
 dependencies {
     // Use WPILib API
-    api wpi.deps.wpilib()
+    implementation wpi.deps.wpilib()
+    nativeZip wpi.deps.wpilibJni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.wpilibJni(wpi.platforms.desktop)
+
+    implementation wpi.deps.vendor.java()
+    nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
